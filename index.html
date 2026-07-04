@@ -9,6 +9,7 @@
 <title>Ledger — Expense Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
@@ -111,9 +112,10 @@
 
   /* ---------- Cards / lists ---------- */
   .card{background:var(--paper-raised); border-radius:var(--radius); box-shadow:var(--shadow); padding:6px;}
-  .row{display:flex; align-items:center; gap:12px; padding:12px 10px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .row{display:flex; align-items:center; gap:12px; padding:12px 10px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .15s ease, transform .15s ease; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;}
   .row:last-child{border-bottom:none;}
   .row:active{background:var(--paper);}
+  .row.lp-active{background:var(--amber-soft); transform:scale(0.985);}
   .icon-circle{
     width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-size:18px; flex-shrink:0; background:var(--paper);
@@ -123,7 +125,7 @@
   .row-sub{font-size:12.5px; color:var(--slate); margin-top:1px;}
   .row-amt{font-size:14.5px; font-weight:600; white-space:nowrap;}
   .row-amt.income{color:var(--emerald);}
-  .row-amt.expense{color:var(--ink);}
+  .row-amt.expense{color:var(--coral);}
 
   .empty{
     text-align:center; padding:40px 20px; color:var(--slate);
@@ -180,7 +182,8 @@
   .month-nav .m-label{font-weight:700; font-size:15px; min-width:150px; text-align:center; font-family:'Space Grotesk',sans-serif;}
 
   /* ---------- Goals ---------- */
-  .goal-card{background:var(--paper-raised); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:14px; display:flex; gap:14px; align-items:center;}
+  .goal-card{background:var(--paper-raised); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:14px; display:flex; gap:14px; align-items:center; cursor:pointer; transition:background .15s ease, transform .15s ease; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;}
+  .goal-card.lp-active{background:var(--amber-soft); transform:scale(0.985);}
   .ring{width:58px; height:58px; flex-shrink:0;}
   .goal-body{flex:1; min-width:0;}
   .goal-name{font-weight:700; font-size:14.5px; margin-bottom:2px;}
@@ -329,9 +332,39 @@
   .auth-divider{display:flex; align-items:center; gap:10px; margin:0 0 16px; color:var(--slate); font-size:12px; font-weight:600;}
   .auth-divider::before, .auth-divider::after{content:""; flex:1; height:1px; background:var(--line);}
   #app.hidden{display:none;}
+
+  /* ---------- Offline banner ---------- */
+  .offline-banner{
+    position:fixed; top:0; left:0; right:0; max-width:480px; margin:0 auto; z-index:70;
+    background:var(--amber); color:#fff; text-align:center; font-size:12px; font-weight:700;
+    padding:calc(9px + var(--safe-t)) 14px 9px; transform:translateY(-100%); transition:transform .3s ease;
+  }
+  .offline-banner.show{transform:translateY(0);}
+
+  /* ---------- Trends screen ---------- */
+  .trend-kpis{display:flex; gap:8px; margin-bottom:16px;}
+  .trend-kpi{flex:1; background:var(--paper-raised); border-radius:14px; padding:12px 8px; box-shadow:var(--shadow); text-align:center;}
+  .trend-kpi .tk-label{font-size:9.5px; text-transform:uppercase; color:var(--slate); font-weight:700; letter-spacing:.03em;}
+  .trend-kpi .tk-val{font-size:14px; font-weight:700; margin-top:5px;}
+  .bar-chart-wrap{overflow-x:auto; padding:14px 6px 4px; -ms-overflow-style:none; scrollbar-width:none;}
+  .bar-chart-wrap::-webkit-scrollbar{display:none;}
+  .bar-chart{display:flex; gap:16px; align-items:flex-end; height:150px; min-width:max-content; padding:0 6px;}
+  .bar-group{display:flex; flex-direction:column; align-items:center; gap:8px; width:38px; flex-shrink:0;}
+  .bar-pair{display:flex; align-items:flex-end; gap:3px; height:120px;}
+  .bar{width:13px; border-radius:4px 4px 0 0; transition:height .3s ease;}
+  .bar.income{background:var(--emerald);}
+  .bar.expense{background:var(--coral);}
+  .bar-month-lbl{font-size:10px; color:var(--slate); font-weight:700;}
+  .chart-legend{display:flex; gap:16px; justify-content:center; margin-top:8px; font-size:11px; color:var(--slate); font-weight:600;}
+  .chart-legend .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle;}
+  .mover-delta{font-size:12.5px; font-weight:700; white-space:nowrap;}
+  .mover-delta.up{color:var(--coral);}
+  .mover-delta.down{color:var(--emerald);}
+  .mover-delta.flat{color:var(--slate);}
 </style>
 </head>
 <body>
+<div class="offline-banner" id="offlineBanner">📡 You're offline — changes will save and sync automatically when you're back</div>
 
 <!-- AUTH SCREEN -->
 <div id="auth-screen">
@@ -381,7 +414,10 @@
         <h1 id="greeting">Hi there 👋</h1>
         <div class="sub" id="todayStr"></div>
       </div>
-      <button class="icon-btn" onclick="openScreen('more')">⚙️</button>
+      <div style="display:flex; gap:8px;">
+        <button class="icon-btn" onclick="openScreen('trends')" title="Monthly trends">📈</button>
+        <button class="icon-btn" onclick="openScreen('more')">⚙️</button>
+      </div>
     </div>
 
     <div class="receipt">
@@ -400,6 +436,22 @@
     <div class="card" id="recentList"></div>
   </div>
 
+  <!-- TRENDS -->
+  <div class="screen" id="screen-trends">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="icon-btn" onclick="openScreen('home')">←</button>
+        <div><h1 style="font-size:19px;">Monthly Trends</h1><div class="sub">Income vs expenses over time</div></div>
+      </div>
+    </div>
+    <div class="chip-row" id="trendFilters"></div>
+    <div class="trend-kpis" id="trendKpis"></div>
+    <div class="card" id="trendChart" style="padding:6px;"></div>
+    <div class="section-head"><h2>Biggest movers</h2><span style="font-size:11px;color:var(--slate);font-weight:600;">vs last month</span></div>
+    <div class="card" id="trendMovers"></div>
+    <div style="height:16px"></div>
+  </div>
+
   <!-- TRANSACTIONS -->
   <div class="screen" id="screen-transactions">
     <div class="topbar"><div><h1>Transactions</h1><div class="sub" id="txCount"></div></div></div>
@@ -408,10 +460,17 @@
       <input type="text" id="txSearch" placeholder="Search transactions" oninput="renderTransactions()">
     </div>
     <div class="chip-row" id="txFilters"></div>
-    <div class="field" style="margin:0 0 12px;">
-      <select id="txCategoryFilter" onchange="renderTransactions()">
-        <option value="">All categories</option>
-      </select>
+    <div style="display:flex; gap:8px; margin:0 0 12px;">
+      <div class="field" style="margin:0; flex:1;">
+        <select id="txCategoryFilter" onchange="renderTransactions()">
+          <option value="">All categories</option>
+        </select>
+      </div>
+      <div class="field" style="margin:0; flex:1;">
+        <select id="txPaymentFilter" onchange="renderTransactions()">
+          <option value="">All payment methods</option>
+        </select>
+      </div>
     </div>
     <div id="txListWrap"></div>
   </div>
@@ -543,7 +602,7 @@
     <label>Payment method</label>
     <select id="txPayment">
       <option>Cash</option><option>Debit Card</option><option>Credit Card</option>
-   <option>Bank Transfer</option><option>UPI</option><option>Digital Wallet</option><option>Cheque</option>
+      <option>Bank Transfer</option><option>UPI</option><option>Digital Wallet</option><option>Cheque</option>
     </select>
   </div>
   <div class="field chk-row" id="txRecurringChkWrap">
@@ -615,6 +674,16 @@
   </div>
 </div>
 
+<!-- Quick Actions Sheet (press-and-hold) -->
+<div class="sheet" id="sheet-quickactions">
+  <div class="sheet-handle"></div>
+  <h3 id="qaTitle">Options</h3>
+  <div class="sheet-actions">
+    <button class="btn btn-outline" id="qaEditBtn">✎ Edit</button>
+    <button class="btn btn-danger" id="qaDeleteBtn">🗑️ Delete</button>
+  </div>
+</div>
+
 <!-- Confirm Sheet -->
 <div class="sheet" id="sheet-confirm">
   <div class="sheet-handle"></div>
@@ -641,6 +710,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+// Enables offline reads/writes: Firestore caches data in IndexedDB and
+// queues writes locally when there's no connection, syncing automatically
+// once the device is back online. Wrapped in try/catch because it throws
+// if called twice or in browsers/tabs that don't support it — safe to ignore.
+try{
+  db.enablePersistence({ synchronizeTabs: true }).catch(()=>{ /* unsupported or multi-tab conflict — app still works, just without local cache */ });
+}catch(e){ /* older browser without IndexedDB support */ }
 let currentUser = null;
 let authMode = 'signin'; // 'signin' | 'signup'
 const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -764,6 +840,7 @@ const INCOME_CATS = [
   ["Gift Received","🎁"],["Other Income","➕"]
 ];
 const ALL_CATS = [...EXPENSE_CATS, ...INCOME_CATS];
+const PAYMENT_METHODS = ["Cash","Debit Card","Credit Card","Bank Transfer","UPI","Digital Wallet","Cheque"];
 const CAT_ICON = Object.fromEntries(ALL_CATS.map(([n,i])=>[n,i]));
 const CAT_COLORS = ["#0E9C74","#E15B3F","#D69A2D","#3B6FB6","#8E5CB0","#2C9BA6","#C25B8F","#7A8A3E","#B0552E","#4A7FA6","#9B6B3C","#5C7A9C","#A15C7A","#3E8A6B","#8A6B3E","#6B5C9C","#9C6B5C"];
 const CAT_COLOR = {}; ALL_CATS.forEach(([n],i)=>CAT_COLOR[n]=CAT_COLORS[i%CAT_COLORS.length]);
@@ -827,40 +904,60 @@ function clearData(){
 
 /* Storage abstraction: reads/writes a single JSON blob to this user's
    private Firestore document, so data is tied to their account/login
-   rather than to one phone or browser. Falls back to localStorage only
-   if there's no logged-in user yet (shouldn't normally happen since the
-   app screen is hidden until auth completes). */
+   rather than to one phone or browser. A mirror copy is kept in
+   localStorage as an instant local cache — this means the app opens with
+   your last-known data immediately even with zero connection, and writes
+   made offline are saved locally right away while Firestore's own
+   persistence layer queues them to sync in the background once you're
+   reconnected. Falls back to localStorage only if there's no logged-in
+   user yet (shouldn't normally happen since the app screen is hidden
+   until auth completes). */
 const STORAGE_KEY = 'expense-tracker-data';
 function userDocRef(){
   if(!currentUser) return null;
   return db.collection('users').doc(currentUser.uid).collection('data').doc(STORAGE_KEY);
 }
 async function storageGet(key){
-  try{
-    const ref = userDocRef();
-    if(ref){
-      const snap = await ref.get();
-      if(snap.exists) return { key, value: snap.data().value };
-      return null;
-    }
-  }catch(e){ /* fall through to localStorage */ }
+  const cacheKey = 'cache:' + key + (currentUser ? ':' + currentUser.uid : '');
+  if(currentUser){
+    try{
+      const ref = userDocRef();
+      // When offline, read straight from Firestore's local cache instead of
+      // waiting on a server round-trip that will just time out.
+      const snap = await ref.get({ source: navigator.onLine ? 'default' : 'cache' });
+      if(snap.exists){
+        const val = snap.data().value;
+        try{ localStorage.setItem(cacheKey, val); }catch(e){}
+        return { key, value: val };
+      }
+    }catch(e){ /* fall through to local mirror below */ }
+    try{
+      const raw = localStorage.getItem(cacheKey);
+      if(raw) return { key, value: raw };
+    }catch(e){}
+    return null;
+  }
   try{
     const raw = localStorage.getItem(key);
     return raw ? { key, value: raw } : null;
   }catch(e){ return null; }
 }
 async function storageSet(key, value){
-  try{
+  if(currentUser){
+    const cacheKey = 'cache:' + key + ':' + currentUser.uid;
+    try{ localStorage.setItem(cacheKey, value); }catch(e){}
     const ref = userDocRef();
     if(ref){
-      await ref.set({ value, updatedAt: Date.now() });
-      return { key, value };
+      // Fire-and-forget: don't block the UI on a network round-trip.
+      // Firestore's offline persistence queues this locally and retries
+      // automatically when connectivity returns, so this always "succeeds"
+      // from the user's point of view even with no signal.
+      ref.set({ value, updatedAt: Date.now() }).catch(()=>{ /* queued locally, will sync later */ });
     }
-  }catch(e){ /* fall through to localStorage */ }
-  try{
-    localStorage.setItem(key, value);
     return { key, value };
-  }catch(e){ return null; }
+  }
+  try{ localStorage.setItem(key, value); return { key, value }; }
+  catch(e){ return null; }
 }
 
 async function loadData(){
@@ -908,12 +1005,22 @@ async function onCurrencyChange(){
   refreshCurrentScreen();
 }
 
+/* ===================== ONLINE / OFFLINE STATUS ===================== */
+function updateOnlineStatus(){
+  const banner = document.getElementById('offlineBanner');
+  if(!banner) return;
+  banner.classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', ()=>{ updateOnlineStatus(); showToast("Back online — synced ✓"); });
+window.addEventListener('offline', ()=>{ updateOnlineStatus(); showToast("You're offline — still works, will sync later"); });
+
 /* ===================== NAV ===================== */
 function openScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.screen===name));
   window.scrollTo(0,0);
+  if(name==='trends') renderTrends();
   if(name==='transactions') renderTransactions();
   if(name==='budget') renderBudget();
   if(name==='goals') renderGoals();
@@ -937,6 +1044,81 @@ function closeAllSheets(){
   document.getElementById('backdrop').classList.remove('show');
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('show'));
 }
+
+/* ===================== PRESS-AND-HOLD TO DELETE ===================== */
+// Works on transactions, recurring bills, and savings goals. Long-press
+// (or long tap on mobile) pops up a small Edit/Delete menu; a normal short
+// tap still opens the item for editing as usual.
+const LP_DURATION = 480;
+const LP_MOVE_TOLERANCE = 10;
+let lpTimer = null;
+let lpFired = false;
+let lpStartX = 0, lpStartY = 0;
+let lpEl = null;
+
+function lpStart(e, type, id, label){
+  const point = e.touches ? e.touches[0] : e;
+  lpStartX = point.clientX; lpStartY = point.clientY;
+  lpFired = false;
+  lpEl = e.currentTarget;
+  clearTimeout(lpTimer);
+  lpTimer = setTimeout(()=>{
+    lpFired = true;
+    if(lpEl) lpEl.classList.remove('lp-active');
+    if(navigator.vibrate) navigator.vibrate(12);
+    openQuickActions(type, id, label);
+  }, LP_DURATION);
+  // Slight delay before showing the "held" visual so quick taps don't flash it
+  setTimeout(()=>{ if(!lpFired && lpTimer && lpEl) lpEl.classList.add('lp-active'); }, 120);
+}
+function lpMove(e){
+  const point = e.touches ? e.touches[0] : e;
+  if(Math.abs(point.clientX-lpStartX) > LP_MOVE_TOLERANCE || Math.abs(point.clientY-lpStartY) > LP_MOVE_TOLERANCE){
+    clearTimeout(lpTimer);
+    if(lpEl) lpEl.classList.remove('lp-active');
+  }
+}
+function lpEnd(e){
+  clearTimeout(lpTimer);
+  if(e && e.currentTarget) e.currentTarget.classList.remove('lp-active');
+  else if(lpEl) lpEl.classList.remove('lp-active');
+}
+function lpClickGuard(e){
+  if(lpFired){ e.preventDefault(); e.stopPropagation(); lpFired = false; return true; }
+  return false;
+}
+
+function openQuickActions(type, id, label){
+  document.getElementById('qaTitle').textContent = label || 'Options';
+  const editBtn = document.getElementById('qaEditBtn');
+  const delBtn = document.getElementById('qaDeleteBtn');
+  editBtn.onclick = () => {
+    closeAllSheets();
+    if(type === 'tx') openTxSheet(id);
+    else if(type === 'bill') openBillSheet(id);
+    else if(type === 'goal') openGoalSheet(id);
+  };
+  delBtn.onclick = () => {
+    closeAllSheets();
+    confirmDeleteItem(type, id, label);
+  };
+  openSheet('sheet-quickactions');
+}
+
+function confirmDeleteItem(type, id, label){
+  document.getElementById('confirmTitle').textContent = 'Delete this?';
+  document.getElementById('confirmMsg').textContent = `"${label}" will be permanently deleted. This can't be undone.`;
+  const btn = document.getElementById('confirmActionBtn');
+  btn.textContent = 'Delete';
+  btn.onclick = async () => {
+    if(type === 'tx'){ editingTxId = id; await deleteCurrentTx(); }
+    else if(type === 'bill'){ editingBillId = id; await deleteCurrentBill(); }
+    else if(type === 'goal'){ editingGoalId = id; await deleteCurrentGoal(); }
+    closeAllSheets();
+  };
+  openSheet('sheet-confirm');
+}
+
 
 /* ===================== HOME ===================== */
 function greetingText(){
@@ -1010,6 +1192,111 @@ function renderRecent(){
   wrap.innerHTML = list.map(t=>txRowHTML(t)).join('');
 }
 
+/* ===================== MONTHLY TRENDS ===================== */
+let trendRange = 6;
+function setTrendRange(n){ trendRange = n; renderTrends(); }
+
+function getMonthlyTrend(n){
+  const out = [];
+  const now = new Date();
+  for(let i = n-1; i >= 0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const mk = d.toISOString().slice(0,7);
+    const label = d.toLocaleDateString(undefined, {month:'short'});
+    const monthTx = state.transactions.filter(t=>t.date.slice(0,7)===mk);
+    const income = monthTx.filter(t=>t.type==='Income').reduce((s,t)=>s+t.amount,0);
+    const expense = monthTx.filter(t=>t.type==='Expense').reduce((s,t)=>s+t.amount,0);
+    out.push({ mk, label, income, expense });
+  }
+  return out;
+}
+
+function renderTrends(){
+  document.getElementById('trendFilters').innerHTML = [6,12].map(n=>
+    `<div class="chip ${trendRange===n?'active':''}" onclick="setTrendRange(${n})">${n} Months</div>`
+  ).join('');
+
+  const data = getMonthlyTrend(trendRange);
+  const max = Math.max(1, ...data.flatMap(d=>[d.income, d.expense]));
+
+  const monthsWithData = data.filter(d=>d.income>0 || d.expense>0).length || 1;
+  const avgIncome = data.reduce((s,d)=>s+d.income,0) / monthsWithData;
+  const avgExpense = data.reduce((s,d)=>s+d.expense,0) / monthsWithData;
+  const avgNet = avgIncome - avgExpense;
+
+  document.getElementById('trendKpis').innerHTML = `
+    <div class="trend-kpi"><div class="tk-label">Avg Income</div><div class="tk-val num" style="color:var(--emerald)">${fmt(avgIncome)}</div></div>
+    <div class="trend-kpi"><div class="tk-label">Avg Expense</div><div class="tk-val num" style="color:var(--coral)">${fmt(avgExpense)}</div></div>
+    <div class="trend-kpi"><div class="tk-label">Avg Net</div><div class="tk-val num">${fmt(avgNet)}</div></div>
+  `;
+
+  document.getElementById('trendChart').innerHTML = `
+    <div class="bar-chart-wrap"><div class="bar-chart">
+      ${data.map(d=>{
+        const ih = Math.max(2, (d.income/max)*118);
+        const eh = Math.max(2, (d.expense/max)*118);
+        return `<div class="bar-group">
+          <div class="bar-pair">
+            <div class="bar income" style="height:${ih}px" title="Income ${fmt(d.income)}"></div>
+            <div class="bar expense" style="height:${eh}px" title="Expense ${fmt(d.expense)}"></div>
+          </div>
+          <div class="bar-month-lbl">${d.label}</div>
+        </div>`;
+      }).join('')}
+    </div></div>
+    <div class="chart-legend">
+      <span><span class="dot" style="background:var(--emerald)"></span>Income</span>
+      <span><span class="dot" style="background:var(--coral)"></span>Expense</span>
+    </div>
+  `;
+
+  renderTrendMovers(data);
+}
+
+function renderTrendMovers(data){
+  const wrap = document.getElementById('trendMovers');
+  const latest = data[data.length-1];
+  const prev = data[data.length-2];
+  if(!prev){
+    wrap.innerHTML = `<div class="empty"><div class="e-icon">📈</div><div class="e-title">Not enough history yet</div><div class="e-sub">Log expenses across a couple months to see trends</div></div>`;
+    return;
+  }
+  const catTotals = (mk) => {
+    const totals = {};
+    state.transactions.filter(t=>t.type==='Expense' && t.date.slice(0,7)===mk)
+      .forEach(t=>{ totals[t.category] = (totals[t.category]||0) + t.amount; });
+    return totals;
+  };
+  const curTotals = catTotals(latest.mk), prevTotals = catTotals(prev.mk);
+  const allCats = new Set([...Object.keys(curTotals), ...Object.keys(prevTotals)]);
+  const movers = [...allCats].map(cat=>{
+    const cur = curTotals[cat] || 0, pv = prevTotals[cat] || 0;
+    const delta = cur - pv;
+    const pct = pv > 0 ? (delta/pv)*100 : (cur > 0 ? 100 : 0);
+    return { cat, cur, pv, delta, pct };
+  }).filter(m => m.cur > 0 || m.pv > 0)
+    .sort((a,b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 6);
+
+  if(movers.length === 0){
+    wrap.innerHTML = `<div class="empty"><div class="e-icon">📊</div><div class="e-title">No spending yet to compare</div></div>`;
+    return;
+  }
+  wrap.innerHTML = movers.map(m=>{
+    const cls = m.delta > 0 ? 'up' : (m.delta < 0 ? 'down' : 'flat');
+    const arrow = m.delta > 0 ? '▲' : (m.delta < 0 ? '▼' : '—');
+    return `
+      <div class="row" style="cursor:default;">
+        <div class="icon-circle">${CAT_ICON[m.cat]||'📦'}</div>
+        <div class="row-body">
+          <div class="row-title">${m.cat}</div>
+          <div class="row-sub">${fmt(m.pv)} → ${fmt(m.cur)}</div>
+        </div>
+        <div class="mover-delta ${cls}">${arrow} ${Math.abs(m.pct).toFixed(0)}%</div>
+      </div>`;
+  }).join('');
+}
+
 function txRowHTML(t){
   const sign = t.type==='Income' ? '+' : '−';
   const cls = t.type==='Income' ? 'income' : 'expense';
@@ -1017,8 +1304,12 @@ function txRowHTML(t){
   const dStr = d.toLocaleDateString(undefined,{month:'short', day:'numeric'});
   const editedTag = t.edited ? `<span class="edited-tag" title="This transaction was edited after it was first entered">E</span>` : '';
   const recurringTag = t.recurring ? `<span class="recurring-tag" title="Auto-added from a recurring expense">🔁</span>` : '';
+  const lpLabel = jsAttr(t.desc);
   return `
-    <div class="row" onclick="openTxSheet('${t.id}')">
+    <div class="row"
+      onpointerdown='lpStart(event,"tx","${t.id}","${lpLabel}")'
+      onpointerup="lpEnd(event)" onpointermove="lpMove(event)" onpointerleave="lpEnd(event)"
+      onclick="if(!lpClickGuard(event)) openTxSheet('${t.id}')">
       <div class="icon-circle">${CAT_ICON[t.category]||'📦'}</div>
       <div class="row-body">
         <div class="row-title">${escapeHtml(t.desc)}${editedTag}${recurringTag}</div>
@@ -1028,6 +1319,14 @@ function txRowHTML(t){
     </div>`;
 }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function jsAttr(s){
+  return String(s||'')
+    .replace(/\\/g,'\\\\')
+    .replace(/"/g,'\\"')
+    .replace(/'/g,'&#39;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
 
 /* ===================== TRANSACTIONS SCREEN ===================== */
 let txFilter = 'All';
@@ -1041,6 +1340,20 @@ function ensureTxCategoryFilterOptions(){
   sel.value = current;
   sel.dataset.built = sig;
 }
+function ensureTxPaymentFilterOptions(){
+  const sel = document.getElementById('txPaymentFilter');
+  // Include any legacy payment values already saved in data, even if they
+  // aren't in the current preset list, so old transactions stay filterable.
+  const usedPayments = Array.from(new Set(state.transactions.map(t=>t.payment).filter(Boolean)));
+  const all = Array.from(new Set([...PAYMENT_METHODS, ...usedPayments]));
+  const sig = all.join('|');
+  if(sel.dataset.built === sig) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All payment methods</option>' +
+    all.map(p=>`<option value="${p}">${p}</option>`).join('');
+  sel.value = current;
+  sel.dataset.built = sig;
+}
 function renderTransactions(){
   document.getElementById('txCount').textContent = `${state.transactions.length} total`;
   const filters = ['All','Income','Expense'];
@@ -1048,12 +1361,15 @@ function renderTransactions(){
     `<div class="chip ${f===txFilter?'active':''}" onclick="setTxFilter('${f}')">${f}</div>`
   ).join('');
   ensureTxCategoryFilterOptions();
+  ensureTxPaymentFilterOptions();
 
   const q = document.getElementById('txSearch').value.trim().toLowerCase();
   const catFilter = document.getElementById('txCategoryFilter').value;
+  const paymentFilter = document.getElementById('txPaymentFilter').value;
   let list = [...state.transactions];
   if(txFilter!=='All') list = list.filter(t=>t.type===txFilter);
   if(catFilter) list = list.filter(t=>t.category===catFilter);
+  if(paymentFilter) list = list.filter(t=>t.payment===paymentFilter);
   if(q) list = list.filter(t=> t.desc.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
   list.sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 
@@ -1412,7 +1728,10 @@ function renderGoals(){
     const daysLeft = Math.ceil((new Date(g.date) - new Date())/(1000*60*60*24));
     const deadlineStr = daysLeft>0 ? `${daysLeft} days left` : 'Target date passed';
     return `
-      <div class="goal-card" onclick="openGoalSheet('${g.id}')">
+      <div class="goal-card"
+        onpointerdown='lpStart(event,"goal","${g.id}","${jsAttr(g.name)}")'
+        onpointerup="lpEnd(event)" onpointermove="lpMove(event)" onpointerleave="lpEnd(event)"
+        onclick="if(!lpClickGuard(event)) openGoalSheet('${g.id}')">
         <svg class="ring" viewBox="0 0 58 58">
           <circle cx="29" cy="29" r="24" fill="none" stroke="var(--line)" stroke-width="6"/>
           <circle cx="29" cy="29" r="24" fill="none" stroke="var(--emerald)" stroke-width="6"
@@ -1515,7 +1834,10 @@ function renderBills(){
     return;
   }
   wrap.innerHTML = rows.map(({b, days, status, label})=>`
-      <div class="row" onclick="openBillSheet('${b.id}')">
+      <div class="row"
+        onpointerdown='lpStart(event,"bill","${b.id}","${jsAttr(b.name)}")'
+        onpointerup="lpEnd(event)" onpointermove="lpMove(event)" onpointerleave="lpEnd(event)"
+        onclick="if(!lpClickGuard(event)) openBillSheet('${b.id}')">
         <div class="icon-circle">${CAT_ICON[b.category]||'📦'}</div>
         <div class="row-body">
           <div class="row-title">${escapeHtml(b.name)}</div>
@@ -1644,11 +1966,23 @@ let appInitialized = false;
 async function runAppInit(){
   if(appInitialized) return; // avoid double init if auth state fires twice
   appInitialized = true;
+  updateOnlineStatus();
   await loadData();
   await processRecurringBills();
   updateCurrencySymbols();
   renderSettings();
   renderHome();
+}
+
+/* ===================== PWA / SERVICE WORKER =====================
+   Registers the offline app-shell cache — but only in contexts where
+   service workers actually work (a real https:// or localhost origin;
+   they can't run from a file:// page or inside a sandboxed preview).
+   No-ops silently everywhere else, so this never breaks anything. */
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{ /* hosting doesn't support it — safe to ignore */ });
+  });
 }
 </script>
 </body>
